@@ -6,6 +6,8 @@
 <title>ОТК · Приёмка сантехкабины</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
   :root{
     --bg:#EEF1F3;
@@ -102,6 +104,7 @@
   .fill-partial{background:var(--blue);}
   .fill-done{background:var(--ok);}
   .fill-issue{background:var(--bad);}
+  .cabin-stage-meta{font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:2px;}
   .cabin-meta{font-size:11.5px;color:var(--ink-faint);}
   .cabin-del{width:42px;border:none;background:var(--surface-2);color:var(--ink-faint);cursor:pointer;font-size:13px;
     border-left:1px solid var(--line);}
@@ -210,7 +213,98 @@
     .topbar,.stage-chips,.bottom-bar,.modal-actions,.cabin-del,.iconbtn{display:none !important;}
     body{background:#fff;}
     .item{break-inside:avoid;}
+    .print-only-title{display:block !important;}
   }
+  .print-only-title{display:none;font-family:var(--font-h);font-size:18px;font-weight:600;margin:0 0 14px;}
+
+  /* ---------- DEFECT CODES ---------- */
+  .code-picker{margin-top:9px;border-top:1px dashed var(--line-strong);padding-top:9px;}
+  .code-picker-label{font-size:11.5px;color:var(--ink-faint);margin-bottom:6px;}
+  .code-chip-wrap{display:flex;flex-wrap:wrap;gap:6px;}
+  .code-chip{border:1.5px solid var(--line-strong);background:var(--surface);border-radius:7px;
+    padding:6px 8px;font-size:12px;line-height:1.3;text-align:left;cursor:pointer;color:var(--ink-soft);max-width:100%;}
+  .code-chip b{font-family:var(--font-m);margin-right:4px;color:var(--ink);}
+  .code-chip.active{background:var(--bad-bg);border-color:var(--bad);color:var(--bad);}
+  .code-chip.active b{color:var(--bad);}
+  .codes-badge{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 0 25px;}
+  .code-tag{font-family:var(--font-m);font-size:11px;background:var(--bad);color:#fff;border-radius:5px;padding:2px 6px;}
+  .live-badge{margin:6px 0 0 25px;font-size:11px;font-weight:600;color:var(--ok);display:flex;align-items:center;gap:4px;}
+  .checked-badge{margin:6px 0 0 25px;font-size:11px;color:var(--ink-faint);}
+  .checked-badge b{color:var(--ink-soft);font-family:var(--font-m);}
+
+  /* ---------- ANALYTICS ---------- */
+  .analytics-link{padding:8px 18px 0;}
+  .analytics-link .btn{width:100%;}
+  .analytics-summary{display:flex;gap:18px;padding:2px 4px 4px;}
+  .analytics-summary div{display:flex;flex-direction:column;align-items:flex-start;}
+  .analytics-summary b{font-family:var(--font-m);font-size:19px;}
+  .analytics-summary span{font-size:10.5px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.04em;}
+  .defect-list{display:flex;flex-direction:column;gap:8px;}
+  .defect-row{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--radius-sm);padding:10px 12px;box-shadow:var(--shadow);}
+  .defect-rank{font-family:var(--font-m);font-weight:700;color:var(--ink-faint);width:18px;text-align:center;flex:0 0 auto;}
+  .defect-info{flex:1;min-width:0;}
+  .defect-text{font-size:13.5px;line-height:1.35;}
+  .defect-meta{font-size:11px;color:var(--ink-faint);margin-top:2px;font-family:var(--font-m);}
+  .defect-count{font-family:var(--font-m);font-weight:700;font-size:18px;color:var(--bad);flex:0 0 auto;}
+  .cat-list{display:flex;flex-direction:column;gap:11px;}
+  .cat-row-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
+  .cat-row-top b{font-family:var(--font-m);}
+  .cat-bar-track{height:8px;background:var(--surface-2);border-radius:4px;overflow:hidden;border:1px solid var(--line);}
+  .cat-bar-fill{height:100%;background:var(--bad);border-radius:4px;}
+
+  /* ---------- Приёмка: начало/конец ---------- */
+  .accept-bar{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:flex-end;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px;margin:0 0 6px;}
+  .accept-field{flex:1;min-width:150px;}
+  .accept-field > label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;
+    color:var(--ink-faint);margin-bottom:5px;}
+  .accept-row{display:flex;gap:6px;}
+  .accept-input{flex:1;min-width:0;border:1.5px solid var(--line-strong);border-radius:var(--radius-sm);
+    padding:9px 10px;font-family:var(--font-m);font-size:13px;background:var(--surface);color:var(--ink);}
+  .accept-now{border:1.5px solid var(--line-strong);background:var(--surface-2);color:var(--ink);
+    border-radius:var(--radius-sm);padding:0 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .accept-now:hover{border-color:var(--ink-faint);}
+  .accept-clear{border:none;background:none;color:var(--ink-faint);font-size:11px;cursor:pointer;text-decoration:underline;padding:2px 0;}
+  .accept-duration{flex-basis:100%;font-size:12px;color:var(--ink-soft);font-weight:600;}
+  .accept-duration b{font-family:var(--font-m);color:var(--ink);}
+  .accept-summary{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-sm);
+    padding:10px 12px;margin:8px 0 2px;font-size:12.5px;color:var(--ink-soft);}
+  .accept-summary .as-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;}
+  .accept-summary b{font-family:var(--font-m);color:var(--ink);font-weight:600;}
+
+  /* ---------- Режимы доступа ---------- */
+  .mode-bar{display:flex;align-items:center;gap:10px;margin:10px 18px 0;padding:10px 12px;border:1px solid var(--line);
+    border-radius:var(--radius-sm);background:var(--surface);box-shadow:var(--shadow);font-size:12.5px;flex-wrap:wrap;}
+  .mode-bar .mode-state{flex:1;min-width:140px;color:var(--ink-soft);}
+  .mode-bar .mode-state b{color:var(--ink);font-family:var(--font-m);}
+  .mode-badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:11px;font-weight:600;
+    padding:4px 9px;border-radius:20px;white-space:nowrap;}
+  .mode-badge.viewer{background:var(--na-bg);color:var(--na);}
+  .mode-badge.inspector{background:var(--ok-bg);color:var(--ok);}
+  .mode-btn{border:1.5px solid var(--line-strong);background:var(--surface-2);color:var(--ink);border-radius:var(--radius-sm);
+    padding:7px 12px;font-size:12.5px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .mode-btn:hover{border-color:var(--ink-faint);}
+  .mode-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .mode-btn.topbar-mode{padding:6px 9px;font-size:11px;}
+  .signoff-who{font-size:12px;color:var(--ink-soft);margin-bottom:8px;}
+  .signoff-who b{font-family:var(--font-m);color:var(--ink);}
+  .signoff-locked{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-faint);
+    background:var(--surface-2);border:1px dashed var(--line-strong);border-radius:var(--radius-sm);padding:11px 12px;}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;background:var(--ink);color:#fff;
+    padding:11px 18px;border-radius:22px;font-size:13px;box-shadow:var(--shadow);max-width:88%;text-align:center;}
+  /* Только просмотр: блокируем изменяющие элементы */
+  #app.mode-viewer .sbtn,
+  #app.mode-viewer .ntbtn,
+  #app.mode-viewer .code-chip,
+  #app.mode-viewer .note-area,
+  #app.mode-viewer .btn-stamp,
+  #app.mode-viewer .accept-input,
+  #app.mode-viewer .accept-now,
+  #app.mode-viewer .accept-clear,
+  #app.mode-viewer .cabin-del,
+  #app.mode-viewer .signoff .link-btn{ pointer-events:none;opacity:.45; }
+  #app.mode-viewer .new-check{ display:none; }
 </style>
 </head>
 <body>
@@ -268,40 +362,6 @@ const DATA = {
         'Проверка крепления системы бачка инсталляции',
         'Проверка наличия герметика во всех стыках кабины (стена–пол, угловые стыки стен)'
       ]},
-      {id:'s5', title:'Установка оконного блока', subtitle:'До и после запенивания',
-        groups:[
-          {label:'До запенивания', items:[
-            'Поверхность оконного проёма обеспылена, очищена от загрязнений и масляных пятен',
-            'Соответствие оконной рамы проекту',
-            'Расположение оконной рамы относительно блока (центровка)',
-            'Проверка уровня оконной рамы',
-            'Шаг и количество анкеров (соответствие длины анкера)',
-            'Наличие опорных колодок'
-          ]},
-          {label:'После запенивания', items:[
-            'Соответствие пропенки монтажных зазоров',
-            'Соответствие подоконника проекту (размеры)',
-            'Запенка под подоконником',
-            'Запенка углов подоконника'
-          ]},
-          {label:'Осмотр при предъявлении блока', items:[
-            'Внутренняя проверка запенки под лентой (на ощупь)',
-            'Осмотр стыка между штапиками',
-            'Уплотнительная лента на штапике — без зажимов и загибов',
-            'Отделка монтажного зазора под подоконником после запенки',
-            'Наличие кронштейна и грунтовка кронштейна',
-            'Открывание окна',
-            'Наличие и шаг установки внутренних прижимных планок (зажим)',
-            'Осмотр фурнитуры на чистоту',
-            'Стыки между подоконником, рамой и откосами равномерно просиликонены',
-            'Наличие заглушек на подоконнике (по бокам)',
-            'Створки открываются и закрываются легко, без усилий',
-            'Осмотр стеклопакета (количество камер, наличие трещин)',
-            'Окно чистое: стыки ровные, нет царапин и сколов на раме и стеклопакете',
-            'Наружная проверка запенки под лентой (на ощупь)'
-          ]}
-        ]
-      }
     ]
   },
   finishing:{
@@ -344,7 +404,8 @@ const DATA = {
         'Умывальник: горизонтальность, крепление',
         'Подключение умывальника (водопровод, сифон)',
         'Герметичность всех соединений (давление, осмотр)',
-        'Работа кранов, смесителей, запорной арматуры'
+        'Работа кранов, смесителей, запорной арматуры',
+        'Зеркало: установка и крепление по проекту'
       ]},
       {id:'f4', title:'Прокладка трубопроводов', items:[
         'Соответствие труб проекту (материал, диаметр)',
@@ -394,7 +455,8 @@ const DATA = {
         {t:'Фотофиксация (фасад, интерьер, узлы)'},
         {t:'Качество затирки (затирка, эпоксидная затирка, силикон)'},
         {t:'Тест всех электрических точек (вкл./выкл.)'},
-        {t:'Оформление акта приёмки, подпись инспектора ОТК', c:true}
+        {t:'Оформление акта приёмки, подпись инспектора ОТК', c:true},
+        {t:'Упаковка кабины для транспортировки'}
       ]}
     ]
   }
@@ -425,6 +487,111 @@ function normalizeData(){
 }
 normalizeData();
 
+/* ---------- defect codes catalog (из реестра ОТК) ---------- */
+const DEFECT_CATALOG = {
+  '1':{title:'Сборка кабины', codes:[
+    {code:'11', text:'Бетон залит не по проекту'},
+    {code:'12', text:'Карта пола не загрунтована'},
+    {code:'13', text:'Заглажка поверхности отсутствует'},
+    {code:'14', text:'Не прокручена стена / стена'},
+    {code:'15', text:'Деформация профилей при сборке'},
+    {code:'16', text:'Повреждение ГКЛВ'},
+    {code:'17', text:'Внешние углы стен утопают/выступают относительно пола более 2 мм'},
+    {code:'18', text:'Внешние углы 2-х стен утопают/выступают относительно друг друга более 2 мм'},
+    {code:'19', text:'Нарушен шаг крепления стен друг к другу'},
+    {code:'110', text:'Нарушен шаг крепления стен к полу / стена / стена'},
+    {code:'111', text:'ГКЛВ в отверстиях не обмазаны гидроизоляцией / некачественно обмазаны'},
+    {code:'112', text:'Плоскостность снаружи СТК по профилям. Зазор более 3 мм под 2-м правилом'},
+    {code:'113', text:'Зазоры при стыковке стен'},
+    {code:'114', text:'Зазоры при стыковке стен и пола'}
+  ]},
+  '2':{title:'Сборка инженерии', codes:[
+    {code:'20', text:'Отверстия под систему ХГВС не соответствуют проекту'},
+    {code:'21', text:'Отверстия под канализацию не соответствуют проекту'},
+    {code:'22', text:'Отверстия под ЭОМ не соответствуют проекту'},
+    {code:'23', text:'Отсутствие труб канализаций'},
+    {code:'24', text:'Отсутствие труб ХГВС'},
+    {code:'25', text:'Наличие механических повреждений труб'},
+    {code:'26', text:'Отсутствие угла наклона труб слива воды'},
+    {code:'27', text:'Отсутствие обшивки вилотерм'},
+    {code:'28', text:'Отсутствие ЭОМ'},
+    {code:'29', text:'Кабель ЭОМ не зафиксирован'},
+    {code:'210', text:'Отсутствие герметичности труб и сварных соединений'},
+    {code:'211', text:'Отсутствие угла наклона труб по проекту'},
+    {code:'212', text:'Наличие открытых клемм и незащищенных проводов'},
+    {code:'213', text:'Прокладка труб водоснабжения выполнена не по проекту'}
+  ]},
+  '3':{title:'Установка сантех приборов', codes:[
+    {code:'30', text:'Сантех приборы не по проекту (марка, модель)'},
+    {code:'31', text:'Сантех приборы не установлены по проекту'},
+    {code:'32', text:'Инсталляция установлена не по проекту'},
+    {code:'33', text:'Ненадежное крепление умывальника / биде'},
+    {code:'34', text:'Отсутствие герметичности соединений сантех приборов'},
+    {code:'35', text:'Ванна установлена не по проекту'},
+    {code:'36', text:'Зеркало установлено не по проекту'},
+    {code:'37', text:'Вентиляция установлена не по проекту'}
+  ]},
+  '4':{title:'Укладка плитки', codes:[
+    {code:'40', text:'Вертикальность стен внутри СТК более 2 мм/м'},
+    {code:'41', text:'Несовпадение швов сопрягаемых стен/пола'},
+    {code:'42', text:'Наличие повреждений/сколов на плитке'},
+    {code:'43', text:'Чистота поверхности плитки отсутствует'},
+    {code:'44', text:'Наличие пустот при приклеивании плитки'},
+    {code:'45', text:'Наличие нарушения кладки плитки по проекту'},
+    {code:'46', text:'Наличие зазоров между стыками плитки'}
+  ]},
+  '5':{title:'Установка потолка', codes:[
+    {code:'50', text:'Отсутствие чистоты на потолке'},
+    {code:'51', text:'Несоответствие потолочного покрытия по проекту'},
+    {code:'52', text:'Нарушен шаг крепления потолка к стенам'},
+    {code:'53', text:'Потолок выступает относительно профиля стен'},
+    {code:'54', text:'Отсутствие наличия освещения'},
+    {code:'55', text:'Отсутствие герметичности потолка'},
+    {code:'56', text:'Наличие зазора между потолком и стеной'}
+  ]},
+  '6':{title:'Итоговая приемка', codes:[
+    {code:'60', text:'Отсутствие целостности швов и герметизации (трещины/сколы и затирка)'},
+    {code:'61', text:'Не прошел финальный пролив'},
+    {code:'62', text:'Не прошел проверку изоляции'},
+    {code:'63', text:'Не прошел проверку освещения (количество софитов, крепление, ровность)'},
+    {code:'64', text:'Отсутствие упаковки кабины'}
+  ]}
+};
+/* Сопоставление этапов сайта (type_stageId) с категориями шифров — приблизительно по смыслу, можно скорректировать */
+const STAGE_CATEGORY_MAP = {
+  'assembly_s1':['1'],
+  'assembly_s2':['1'],
+  'assembly_s3':['1'],
+  'assembly_s4':['3'],
+  'finishing_f1':['4'],
+  'finishing_f2':['4'],
+  'finishing_f3':['3'],
+  'finishing_f4':['2'],
+  'finishing_f5':['5'],
+  'finishing_f6':['2'],
+  'finishing_f7':['6']
+};
+const CODE_INDEX = {};
+Object.keys(DEFECT_CATALOG).forEach(catKey=>{
+  DEFECT_CATALOG[catKey].codes.forEach(c=>{ CODE_INDEX[c.code]={text:c.text, catKey}; });
+});
+function codeText(code){ return CODE_INDEX[code] ? CODE_INDEX[code].text : code; }
+function codeCategoryKey(code){ return CODE_INDEX[code] ? CODE_INDEX[code].catKey : null; }
+
+/* Каждому пункту сопоставлены его собственные шифры несоответствий (совмещённый чек-лист).
+   Пункты без записи — процессные проверки, шифр не предусмотрен. */
+const ITEM_CODES = {"assembly_s1_0_5":["11"],"assembly_s1_0_6":["13"],"assembly_s1_0_9":["12"],"assembly_s2_0_0":["15"],"assembly_s2_0_6":["16"],"assembly_s2_0_7":["111"],"assembly_s3_0_3":["113"],"assembly_s3_0_4":["112"],"assembly_s3_0_6":["17","18"],"assembly_s3_0_7":["110","114"],"assembly_s3_0_8":["14","19"],"finishing_f1_0_0":["45"],"finishing_f1_0_3":["41"],"finishing_f1_0_6":["35"],"finishing_f1_0_7":["44"],"finishing_f2_0_1":["40"],"finishing_f2_0_4":["46"],"finishing_f2_0_9":["43"],"finishing_f3_0_0":["30"],"finishing_f3_0_1":["31"],"finishing_f3_0_4":["32"],"finishing_f3_0_8":["33"],"finishing_f3_0_10":["34"],"finishing_f3_0_12":["36"],"finishing_f4_0_0":["23","24"],"finishing_f4_0_1":["20","21","213"],"finishing_f4_0_2":["26","211"],"finishing_f4_0_4":["210"],"finishing_f4_0_9":["25"],"finishing_f4_0_12":["27"],"finishing_f5_0_0":["51"],"finishing_f5_0_3":["53","56"],"finishing_f5_0_4":["55"],"finishing_f5_0_5":["37"],"finishing_f5_0_7":["52"],"finishing_f5_0_8":["54","63"],"finishing_f5_0_9":["50"],"finishing_f6_0_0":["22","28","29"],"finishing_f6_0_5":["212"],"finishing_f6_0_6":["62"],"finishing_f7_0_0":["42"],"finishing_f7_0_1":["60"],"finishing_f7_0_6":["61"],"finishing_f7_0_12":["64"]};
+const CODE_TO_ITEM = {};
+Object.keys(ITEM_CODES).forEach(function(itemId){ ITEM_CODES[itemId].forEach(function(code){ CODE_TO_ITEM[code]=itemId; }); });
+function itemCategoryKeys(itemId){
+  const parts = itemId.split('_');
+  return STAGE_CATEGORY_MAP[parts[0]+'_'+parts[1]] || [];
+}
+function codesForItem(itemId){
+  const cs = ITEM_CODES[itemId] || [];
+  return cs.map(code=>({code, text: codeText(code)}));
+}
+
 let state = {
   screen:'home',
   homeTab:'assembly',
@@ -437,7 +604,17 @@ let state = {
   stageIndex:0,
   openNotes:new Set(),
   showSummary:false,
-  saveStatus:'idle'
+  saveStatus:'idle',
+  analyticsType:null,
+  analyticsData:null,
+  analyticsLoading:false,
+  mode:'viewer',
+  inspectorId:'',
+  inspectorIdDraft:'',
+  showModeModal:false,
+  pendingSignStage:null,
+  toastMsg:'',
+  livePresence:{}
 };
 
 function escapeHtml(s){
@@ -452,21 +629,82 @@ function formatDate(iso){
 function currentTypeData(){ return DATA[state.type]; }
 function currentStages(){ return DATA[state.type].stages; }
 
-/* ---------- storage ---------- */
+/* ---------- storage (Supabase) ---------- */
+const SUPABASE_URL = 'https://uxjprtckfmjlxcoljjfv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV4anBydGNrZm1qbHhjb2xqamZ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM1MDc3MDksImV4cCI6MjA5OTA4MzcwOX0.UeKLGf9wE02kzdkw0oRVH5kM6hPcrGcUFI6VRQgNgmE';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const STORAGE_PREFIX = 'otk_v1_';
+async function storageGet(key){
+  try{
+    const { data, error } = await sb.from('kv_store').select('value').eq('key', key).maybeSingle();
+    if(error) throw error;
+    return data ? data.value : null;
+  }catch(e){ console.error('supabase get failed', e); return null; }
+}
+async function storageSet(key, value){
+  try{
+    const { error } = await sb.from('kv_store').upsert({ key, value, updated_at: new Date().toISOString() });
+    if(error) throw error;
+  }catch(e){ console.error('supabase set failed', e); }
+}
+async function storageDelete(key){
+  try{
+    const { error } = await sb.from('kv_store').delete().eq('key', key);
+    if(error) throw error;
+  }catch(e){ console.error('supabase delete failed', e); }
+}
+
+/* ---------- живая метка "сейчас проверяет" (Supabase Realtime Presence) ---------- */
+const CLIENT_ID = (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()));
+let presenceChannel = null;
+function rebuildLivePresence(){
+  state.livePresence = {};
+  if(!presenceChannel) return;
+  const st = presenceChannel.presenceState();
+  Object.keys(st).forEach(key=>{
+    if(key===CLIENT_ID) return;
+    (st[key]||[]).forEach(p=>{
+      if(p && p.itemId) state.livePresence[p.itemId] = {inspectorId: p.inspectorId||'Аноним', at: p.at};
+    });
+  });
+  render();
+}
+function joinPresence(type, slug){
+  leavePresence();
+  state.livePresence = {};
+  presenceChannel = sb.channel('presence-'+type+'-'+slug, { config: { presence: { key: CLIENT_ID } } });
+  presenceChannel
+    .on('presence', {event:'sync'}, rebuildLivePresence)
+    .on('presence', {event:'join'}, rebuildLivePresence)
+    .on('presence', {event:'leave'}, rebuildLivePresence)
+    .subscribe(async (status)=>{
+      if(status==='SUBSCRIBED'){
+        try{ await presenceChannel.track({inspectorId: state.inspectorId||'Аноним', itemId:null, at: Date.now()}); }catch(e){}
+      }
+    });
+}
+function leavePresence(){
+  if(presenceChannel){ try{ sb.removeChannel(presenceChannel); }catch(e){} presenceChannel=null; }
+  state.livePresence = {};
+}
+function trackPresence(itemId){
+  if(!presenceChannel) return;
+  try{ presenceChannel.track({inspectorId: state.inspectorId||'Аноним', itemId, at: Date.now()}); }catch(e){}
+}
 async function getIndexList(type){
   try{
-    const res = await window.storage.get('idx_'+type, false);
-    return res ? JSON.parse(res.value) : [];
+    const raw = await storageGet('idx_'+type);
+    return raw ? JSON.parse(raw) : [];
   }catch(e){ return []; }
 }
 async function loadChecklistStorage(type, slug){
   try{
-    const res = await window.storage.get('cl_'+type+'_'+slug, false);
-    return res ? JSON.parse(res.value) : null;
+    const raw = await storageGet('cl_'+type+'_'+slug);
+    return raw ? JSON.parse(raw) : null;
   }catch(e){ return null; }
 }
 async function saveChecklistStorage(type, slug, data){
-  try{ await window.storage.set('cl_'+type+'_'+slug, JSON.stringify(data), false); }
+  try{ await storageSet('cl_'+type+'_'+slug, JSON.stringify(data)); }
   catch(e){ console.error('save failed', e); }
 }
 function computeSummary(type, data){
@@ -487,10 +725,11 @@ async function updateIndexSummary(type, slug, cabin, data){
   try{
     const idx = await getIndexList(type);
     const summary = computeSummary(type, data);
-    const entry = Object.assign({slug, cabin, updatedAt:data.meta.updatedAt}, summary);
+    const stageProgress = computeStageProgress(type, data);
+    const entry = Object.assign({slug, cabin, updatedAt:data.meta.updatedAt}, summary, stageProgress);
     const i = idx.findIndex(e=>e.slug===slug);
     if(i>=0) idx[i]=entry; else idx.unshift(entry);
-    await window.storage.set('idx_'+type, JSON.stringify(idx), false);
+    await storageSet('idx_'+type, JSON.stringify(idx));
     state.cabinIndexCache[type]=idx;
   }catch(e){ console.error('index save failed', e); }
 }
@@ -508,6 +747,7 @@ function scheduleSave(){
   updateSaveIndicatorDom();
 }
 async function flushSave(){
+  saveTimer=null;
   if(!state.type || !state.cabin) return;
   state.data.meta.updatedAt = new Date().toISOString();
   const slug = slugify(state.cabin);
@@ -543,41 +783,128 @@ async function openCabin(type, cabinRaw){
   state.cabinInputValue='';
   state.screen='checklist';
   state.saveStatus='idle';
+  joinPresence(type, slug);
   render();
   updateIndexSummary(type, slug, cabin, existing);
 }
-function goHome(){
-  if(saveTimer){ clearTimeout(saveTimer); flushSave(); }
+async function goHome(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; }
+  await flushSave();
+  leavePresence();
   state.screen='home';
   state.confirmDeleteSlug=null;
+  await refreshIndex(state.homeTab);
   render();
-  refreshIndex(state.homeTab);
 }
-function ensureItem(id){ if(!state.data.items[id]) state.data.items[id]={status:null, note:''}; }
+function ensureItem(id){
+  if(!state.data.items[id]) state.data.items[id]={status:null, note:'', codes:[]};
+  else if(!state.data.items[id].codes) state.data.items[id].codes=[];
+}
 function setStatus(itemId, val){
   ensureItem(itemId);
   const cur = state.data.items[itemId];
   cur.status = (cur.status===val) ? null : val;
-  if(cur.status==='bad') state.openNotes.add(itemId);
+  if(cur.status){
+    cur.checkedBy = state.inspectorId || 'Аноним';
+    cur.checkedAt = new Date().toISOString();
+  }
+  if(cur.status==='bad'){
+    state.openNotes.add(itemId);
+    const cs = ITEM_CODES[itemId] || [];
+    if(cs.length===1 && (!cur.codes || cur.codes.length===0)) cur.codes=[cs[0]];
+  }
+  trackPresence(itemId);
+  render();
+  scheduleSave();
+}
+function toggleCode(itemId, code){
+  ensureItem(itemId);
+  const codes = state.data.items[itemId].codes;
+  const i = codes.indexOf(code);
+  if(i>=0) codes.splice(i,1); else codes.push(code);
   render();
   scheduleSave();
 }
 function toggleNote(id){
   ensureItem(id);
   if(state.openNotes.has(id)) state.openNotes.delete(id); else state.openNotes.add(id);
+  trackPresence(id);
   render();
 }
+/* ---------- Режимы доступа: просмотр / инспектор ОТК ---------- */
+/* Личность инспектора и режим — это НЕ общие данные, у каждого устройства свои,
+   поэтому храним их в localStorage, а не в общей таблице Supabase. */
+function canEdit(){ return state.mode==='inspector'; }
+async function persistMode(){
+  try{ localStorage.setItem('otk_local_mode', state.mode); }catch(e){}
+  try{ localStorage.setItem('otk_local_inspector', state.inspectorId||''); }catch(e){}
+}
+async function loadModeState(){
+  try{ const m=localStorage.getItem('otk_local_mode'); if(m==='inspector'||m==='viewer') state.mode=m; }catch(e){}
+  try{ const id=localStorage.getItem('otk_local_inspector'); if(id) state.inspectorId=id; }catch(e){}
+}
+function openInspectorLogin(pendingStage){
+  state.inspectorIdDraft = state.inspectorId||'';
+  state.pendingSignStage = pendingStage||null;
+  state.showModeModal = true;
+  render();
+}
+function confirmInspector(){
+  const id = (state.inspectorIdDraft||'').trim();
+  if(!id){ toast('Укажите индивидуальный № ОТК или ФИО'); return; }
+  state.inspectorId = id; state.mode = 'inspector'; state.showModeModal = false;
+  persistMode();
+  const ps = state.pendingSignStage; state.pendingSignStage = null;
+  render();
+  if(ps) signStage(ps);
+}
+function exitInspector(){
+  state.mode='viewer'; state.showModeModal=false; state.pendingSignStage=null;
+  persistMode(); render(); toast('Режим просмотра включён');
+}
+let _toastT=null;
+function toast(msg){
+  state.toastMsg=msg; render();
+  clearTimeout(_toastT); _toastT=setTimeout(()=>{ state.toastMsg=''; render(); }, 2300);
+}
 function signStage(stageId){
-  const name = (state.data.meta.inspectorName||'').trim();
-  state.data.stageSign[stageId] = {name: name || 'Инспектор ОТК', date:new Date().toISOString()};
+  if(!canEdit() || !(state.inspectorId||'').trim()){ openInspectorLogin(stageId); return; }
+  state.data.stageSign[stageId] = {name: state.inspectorId.trim(), date:new Date().toISOString()};
   render();
   scheduleSave();
 }
 function unsignStage(stageId){
+  if(!canEdit()){ toast('Доступно в режиме инспектора ОТК'); return; }
   delete state.data.stageSign[stageId];
   render();
   scheduleSave();
 }
+function renderModeBar(){
+  const insp = state.mode==='inspector';
+  return '<div class="mode-bar">'
+    +'<span class="mode-badge '+(insp?'inspector':'viewer')+'">'+(insp?'● Инспектор ОТК':'○ Просмотр')+'</span>'
+    +'<span class="mode-state">'+(insp
+        ? 'Редактирование включено · <b>'+escapeHtml(state.inspectorId||'')+'</b>'
+        : 'Только просмотр — изменения недоступны')+'</span>'
+    +(insp
+        ? '<button class="mode-btn" data-action="exit-inspector">Выйти</button>'
+        : '<button class="mode-btn primary" data-action="open-inspector-login">Войти как инспектор</button>')
+    +'</div>';
+}
+function renderModeModal(){
+  if(!state.showModeModal) return '';
+  return '<div class="modal-backdrop" data-action="close-mode">'
+    +'<div class="modal" data-action="stop">'
+    +'<div class="stage-eyebrow">Режим инспектора ОТК</div>'
+    +'<div class="stage-title" style="font-size:19px;margin:4px 0 6px;">Вход для приёмки</div>'
+    +'<p class="hero-sub" style="margin:0 0 12px;">Укажите индивидуальный № ОТК или ФИО. Он обязателен и будет проставляться при отметке о приёмке каждого этапа.</p>'
+    +'<input type="text" class="cabin-input" style="width:100%;margin-bottom:12px;" placeholder="Индивидуальный № ОТК или ФИО" value="'+escapeHtml(state.inspectorIdDraft||'')+'" data-action="inspector-id-input">'
+    +'<div class="modal-actions">'
+      +'<button class="btn btn-ghost" data-action="close-mode">Отмена</button>'
+      +'<button class="btn btn-primary-blue" data-action="confirm-inspector">Войти в режим ОТК</button>'
+    +'</div></div></div>';
+}
+function renderToast(){ return state.toastMsg ? '<div class="toast">'+escapeHtml(state.toastMsg)+'</div>' : ''; }
 function handleDeleteClick(type, slug){
   if(state.confirmDeleteSlug===slug){
     deleteCabin(type, slug);
@@ -588,21 +915,152 @@ function handleDeleteClick(type, slug){
   }
 }
 async function deleteCabin(type, slug){
-  try{ await window.storage.delete('cl_'+type+'_'+slug, false); }catch(e){}
+  try{ await storageDelete('cl_'+type+'_'+slug); }catch(e){}
   const idx = await getIndexList(type);
   const next = idx.filter(e=>e.slug!==slug);
-  try{ await window.storage.set('idx_'+type, JSON.stringify(next), false); }catch(e){}
+  try{ await storageSet('idx_'+type, JSON.stringify(next)); }catch(e){}
   state.cabinIndexCache[type]=next;
   state.confirmDeleteSlug=null;
   render();
 }
+function computeAnalytics(type, cabins){
+  const itemIndex = {};
+  DATA[type].stages.forEach(s=>s.blocks.forEach(b=>b.items.forEach(it=>{ itemIndex[it.id]=it; })));
+  const codeCounts = {};
+  const categoryCounts = {};
+  let totalBad=0, totalCritical=0;
+  cabins.forEach(({cabin, data})=>{
+    Object.keys(data.items||{}).forEach(id=>{
+      const rec = data.items[id];
+      if(rec && rec.status==='bad'){
+        totalBad++;
+        const def = itemIndex[id];
+        if(def && def.c) totalCritical++;
+        (rec.codes||[]).forEach(code=>{
+          if(!codeCounts[code]) codeCounts[code]={code, text:codeText(code), count:0, cabinSet:new Set()};
+          codeCounts[code].count++;
+          codeCounts[code].cabinSet.add(cabin);
+          const catKey = codeCategoryKey(code);
+          if(catKey) categoryCounts[catKey]=(categoryCounts[catKey]||0)+1;
+        });
+      }
+    });
+  });
+  const topDefects = Object.values(codeCounts).sort((a,b)=>b.count-a.count).slice(0,10)
+    .map(c=>({code:c.code, text:c.text, count:c.count, cabinsCount:c.cabinSet.size}));
+  const byCategory = Object.keys(DEFECT_CATALOG).map(k=>({
+    key:k, title:DEFECT_CATALOG[k].title, count:categoryCounts[k]||0
+  })).sort((a,b)=>b.count-a.count);
+  return {totalBad, totalCritical, topDefects, byCategory, cabinsCount:cabins.length};
+}
+async function openAnalytics(type){
+  state.screen='analytics';
+  state.analyticsType=type;
+  state.analyticsLoading=true;
+  state.analyticsData=null;
+  render();
+  const idx = await getIndexList(type);
+  const cabins=[];
+  for(const e of idx){
+    const data = await loadChecklistStorage(type, e.slug);
+    if(data) cabins.push({cabin:e.cabin, data});
+  }
+  state.analyticsData = computeAnalytics(type, cabins);
+  state.analyticsLoading = false;
+  if(state.screen==='analytics') render();
+}
+
+/* ---------- экспорт реестра несоответствий в Excel (авто-заполнение по шифрам) ---------- */
+const CATEGORY_COLS = {'1':'Несоответствия СБОРКИ КАБИНЫ','2':'Несоответствия СБОРКИ ИНЖЕНЕРИИ','3':'Несоответствия УСТАНОВКИ САНТЕХ ПРИБОРОВ','4':'Несоответствия УКЛАДКИ ПЛИТКИ','5':'Несоответствия УСТАНОВКИ ПОТОЛКА','6':'Несоответствия ИТОГОВАЯ ПРИЕМКА'};
+function itemIndexFor(type){
+  const idx={};
+  DATA[type].stages.forEach(s=>s.blocks.forEach(b=>b.items.forEach(it=>{ idx[it.id]=it; })));
+  return idx;
+}
+function collectRowFromData(cabinName, assemblyData, finishingData){
+  const catCodes = {'1':new Set(),'2':new Set(),'3':new Set(),'4':new Set(),'5':new Set(),'6':new Set()};
+  let hasBad=false, hasCritical=false, totalItems=0, checkedItems=0;
+  const notes=[];
+  [['assembly',assemblyData],['finishing',finishingData]].forEach(([type,data])=>{
+    if(!data) return;
+    const itemIdx = itemIndexFor(type);
+    const ids = Object.keys(itemIdx);
+    totalItems += ids.length;
+    ids.forEach(id=>{
+      const rec = data.items[id];
+      if(rec && rec.status) checkedItems++;
+      if(rec && rec.status==='bad'){
+        hasBad=true;
+        if(itemIdx[id].c) hasCritical=true;
+        if(rec.note) notes.push(rec.note.trim());
+        (rec.codes||[]).forEach(code=>{
+          const catKey = codeCategoryKey(code);
+          if(catKey && catCodes[catKey]) catCodes[catKey].add(code);
+        });
+      }
+    });
+  });
+  let status;
+  if(checkedItems<totalItems) status='В обработке';
+  else if(!hasBad) status='Принято';
+  else if(hasCritical) status='Отказано';
+  else status='Принято с отступлением';
+  const criticality = hasCritical ? 'Критическое' : (hasBad ? 'Устранимое' : '');
+  const dateSborki = (assemblyData && assemblyData.meta && assemblyData.meta.createdAt) || (finishingData && finishingData.meta && finishingData.meta.createdAt) || '';
+  const dateAcc = (finishingData && finishingData.meta && finishingData.meta.acceptEnd) || (assemblyData && assemblyData.meta && assemblyData.meta.acceptEnd) || '';
+  return {
+    'Наименование': cabinName,
+    'Дата сборки': dateSborki ? new Date(dateSborki) : '',
+    'Статус': status,
+    'Критичность дефекта': criticality,
+    'Дата приемки': dateAcc ? new Date(dateAcc) : '',
+    'Несоответсвия СБОРКИ КАБИНЫ': [...catCodes['1']].join(','),
+    'Несоответсвия СБОРКИ ИНЖЕНЕРИИ': [...catCodes['2']].join(','),
+    'Несоответствия УСТАНОВКИ САНТЕХ ПРИБОРОВ': [...catCodes['3']].join(','),
+    'Несоответсвия УКЛАДКИ ПЛИТКИ': [...catCodes['4']].join(','),
+    'Несоответсвия УСТАНОВКИ ПОТОЛКА': [...catCodes['5']].join(','),
+    'Несоответсвия ИТОГОВАЯ ПРИЕМКА': [...catCodes['6']].join(','),
+    'Обоснование': notes.join(' / ')
+  };
+}
+async function exportReestr(){
+  toast('Собираю реестр…');
+  const idxA = await getIndexList('assembly');
+  const idxF = await getIndexList('finishing');
+  const bySlug = {};
+  idxA.forEach(e=>{ bySlug[e.slug]=bySlug[e.slug]||{cabin:e.cabin}; bySlug[e.slug].aSlug=e.slug; });
+  idxF.forEach(e=>{ bySlug[e.slug]=bySlug[e.slug]||{cabin:e.cabin}; bySlug[e.slug].fSlug=e.slug; });
+  const rows=[];
+  for(const slug of Object.keys(bySlug)){
+    const entry = bySlug[slug];
+    const aData = entry.aSlug ? await loadChecklistStorage('assembly', entry.aSlug) : null;
+    const fData = entry.fSlug ? await loadChecklistStorage('finishing', entry.fSlug) : null;
+    rows.push(collectRowFromData(entry.cabin, aData, fData));
+  }
+  const wsReestr = XLSX.utils.json_to_sheet(rows);
+  wsReestr['!cols'] = [{wch:20},{wch:12},{wch:14},{wch:16},{wch:12},{wch:16},{wch:18},{wch:20},{wch:16},{wch:16},{wch:16},{wch:30}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, wsReestr, 'реестр');
+  const shifrRows=[];
+  Object.keys(DEFECT_CATALOG).forEach(catKey=>{
+    shifrRows.push({'Шифр':catKey+'.', 'Несоответствие':DEFECT_CATALOG[catKey].title.toUpperCase(), 'Проверено':''});
+    DEFECT_CATALOG[catKey].codes.forEach(c=>{
+      shifrRows.push({'Шифр':c.code, 'Несоответствие':c.text, 'Проверено':''});
+    });
+  });
+  const wsShifr = XLSX.utils.json_to_sheet(shifrRows);
+  wsShifr['!cols']=[{wch:8},{wch:60},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsShifr, 'Шифры несоответствий');
+  XLSX.writeFile(wb, 'Реестр несоответствий '+new Date().toISOString().slice(0,10)+'.xlsx');
+  toast('Реестр скачан');
+}
 
 /* ---------- render ---------- */
-function stageStatus(stage){
+function stageStatusFor(stage, data){
   let total=0, checked=0, bad=0;
   stage.blocks.forEach(b=>b.items.forEach(it=>{
     total++;
-    const st = state.data.items[it.id] && state.data.items[it.id].status;
+    const st = data.items[it.id] && data.items[it.id].status;
     if(st){ checked++; if(st==='bad') bad++; }
   }));
   if(bad>0) return 'issue';
@@ -610,22 +1068,59 @@ function stageStatus(stage){
   if(checked===total) return 'done';
   return 'partial';
 }
+function stageStatus(stage){ return stageStatusFor(stage, state.data); }
+function computeStageProgress(type, data){
+  const stages = DATA[type].stages;
+  let lastTouched = 0, doneCount = 0, signedCount = 0;
+  stages.forEach((stage,i)=>{
+    const status = stageStatusFor(stage, data);
+    const signed = !!(data.stageSign && data.stageSign[stage.id]);
+    if(status!=='empty' || signed) lastTouched = i+1;
+    if(status==='done') doneCount++;
+    if(signed) signedCount++;
+  });
+  return {
+    lastTouched,
+    totalStages: stages.length,
+    lastTouchedTitle: lastTouched>0 ? stages[lastTouched-1].title : '',
+    doneCount,
+    signedCount
+  };
+}
+function renderCodePicker(item, rec){
+  const codes = codesForItem(item.id);
+  if(!codes.length) return '';
+  const selected = rec.codes || [];
+  return '<div class="code-picker"><div class="code-picker-label">Выберите подходящий шифр несоответствия:</div>'
+    +'<div class="code-chip-wrap">'
+    +codes.map(c=>'<button type="button" class="code-chip '+(selected.includes(c.code)?'active':'')+'" data-action="toggle-code" data-item="'+item.id+'" data-code="'+c.code+'"><b>'+c.code+'</b>'+escapeHtml(c.text)+'</button>').join('')
+    +'</div></div>';
+}
 function renderItem(item, n){
   const rec = state.data.items[item.id] || {};
   const status = rec.status || null;
   const note = rec.note || '';
+  const codes = rec.codes || [];
   const noteOpen = state.openNotes.has(item.id) || status==='bad';
+  const codesBadge = (status==='bad' && codes.length) ? '<div class="codes-badge">'+codes.map(c=>'<span class="code-tag">'+escapeHtml(c)+'</span>').join('')+'</div>' : '';
+  const live = state.livePresence[item.id];
+  const liveBadge = live ? '<div class="live-badge">● сейчас проверяет <b>'+escapeHtml(live.inspectorId)+'</b></div>' : '';
+  const checkedBadge = (rec.checkedBy) ? '<div class="checked-badge">Проверил: <b>'+escapeHtml(rec.checkedBy)+'</b> · '+formatDate(rec.checkedAt)+'</div>' : '';
   return '<div class="item st-'+(status||'none')+'">'
     +'<div class="item-row">'
       +'<span class="item-num">'+n+'</span>'
       +'<div class="item-text">'+(item.c?'<span class="crit" title="Критический пункт">★</span>':'')+escapeHtml(item.t)+'</div>'
     +'</div>'
+    +liveBadge
+    +codesBadge
     +'<div class="item-controls">'
       +'<button class="sbtn ok '+(status==='ok'?'active':'')+'" data-action="status" data-item="'+item.id+'" data-val="ok">✓</button>'
       +'<button class="sbtn bad '+(status==='bad'?'active':'')+'" data-action="status" data-item="'+item.id+'" data-val="bad">✗</button>'
       +'<button class="sbtn na '+(status==='na'?'active':'')+'" data-action="status" data-item="'+item.id+'" data-val="na">—</button>'
       +'<button class="ntbtn '+(note?'has':'')+'" data-action="toggle-note" data-item="'+item.id+'">✎</button>'
     +'</div>'
+    +checkedBadge
+    +(status==='bad' ? renderCodePicker(item, rec) : '')
     +(noteOpen ? '<textarea class="note-area" rows="2" placeholder="Комментарий к пункту…" data-action="note" data-item="'+item.id+'">'+escapeHtml(note)+'</textarea>' : '')
     +'</div>';
 }
@@ -635,12 +1130,17 @@ function renderSignoff(stage){
     return '<div class="signoff"><div class="signoff-label">Предъявление работ инспектору ОТК</div>'
       +'<div class="signoff-done"><div class="mini-stamp">ОТК</div>'
       +'<div class="signoff-meta"><b>'+escapeHtml(sign.name)+'</b><span>'+formatDate(sign.date)+'</span></div>'
-      +'<button class="link-btn" data-action="unsign-stage" data-stage="'+stage.id+'">Отменить</button></div></div>';
+      +(canEdit()?'<button class="link-btn" data-action="unsign-stage" data-stage="'+stage.id+'">Отменить</button>':'')
+      +'</div></div>';
+  }
+  if(!canEdit()){
+    return '<div class="signoff"><div class="signoff-label">Предъявление работ инспектору ОТК</div>'
+      +'<div class="signoff-locked">🔒 Отметка о приёмке доступна в режиме инспектора ОТК</div></div>';
   }
   return '<div class="signoff"><div class="signoff-label">Предъявление работ инспектору ОТК</div>'
+    +'<div class="signoff-who">Подписывает: <b>'+escapeHtml(state.inspectorId||'—')+'</b></div>'
     +'<div class="signoff-pending">'
-    +'<input type="text" class="signoff-input" placeholder="ФИО инспектора" value="'+escapeHtml(state.data.meta.inspectorName||'')+'" data-action="inspector-name-input">'
-    +'<button class="btn btn-stamp" data-action="sign-stage" data-stage="'+stage.id+'">Поставить отметку</button>'
+    +'<button class="btn btn-stamp" data-action="sign-stage" data-stage="'+stage.id+'">Поставить отметку ОТК</button>'
     +'</div></div>';
 }
 function renderStageContent(stage){
@@ -654,6 +1154,57 @@ function renderStageContent(stage){
     +'<h2 class="stage-title">'+escapeHtml(stage.title)+'</h2>'
     +(stage.subtitle?'<div class="stage-sub">'+escapeHtml(stage.subtitle)+'</div>':'')
     +'</div><div class="items">'+blocksHtml+'</div>'+renderSignoff(stage);
+}
+function toLocalInput(iso){
+  if(!iso) return '';
+  const d = new Date(iso);
+  if(isNaN(d)) return '';
+  const p = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes());
+}
+function acceptDuration(meta){
+  if(!meta || !meta.acceptStart || !meta.acceptEnd) return '';
+  const ms = new Date(meta.acceptEnd) - new Date(meta.acceptStart);
+  if(isNaN(ms) || ms < 0) return '';
+  const mins = Math.round(ms/60000);
+  const h = Math.floor(mins/60), m = mins%60;
+  return (h?h+' ч ':'') + m + ' мин';
+}
+function setAcceptTime(which, val, doRender){
+  const key = which==='start' ? 'acceptStart' : 'acceptEnd';
+  if(val===null){ state.data.meta[key] = new Date().toISOString(); }
+  else if(val===''){ state.data.meta[key] = ''; }
+  else { const d=new Date(val); state.data.meta[key] = isNaN(d) ? '' : d.toISOString(); }
+  if(doRender) render();
+  scheduleSave();
+}
+function renderAcceptBar(){
+  const m = state.data.meta;
+  const start = m.acceptStart||'', end = m.acceptEnd||'';
+  const dur = acceptDuration(m);
+  return '<div class="stage-panel"><div class="accept-bar">'
+    +'<div class="accept-field"><label>Начало приёмки</label><div class="accept-row">'
+      +'<input type="datetime-local" class="accept-input" data-action="accept-input" data-which="start" value="'+toLocalInput(start)+'">'
+      +'<button class="accept-now" data-action="accept-now" data-which="start">Сейчас</button></div>'
+      +(start?'<button class="accept-clear" data-action="accept-clear" data-which="start">очистить</button>':'')
+    +'</div>'
+    +'<div class="accept-field"><label>Конец приёмки</label><div class="accept-row">'
+      +'<input type="datetime-local" class="accept-input" data-action="accept-input" data-which="end" value="'+toLocalInput(end)+'">'
+      +'<button class="accept-now" data-action="accept-now" data-which="end">Сейчас</button></div>'
+      +(end?'<button class="accept-clear" data-action="accept-clear" data-which="end">очистить</button>':'')
+    +'</div>'
+    +(dur?'<div class="accept-duration">Длительность приёмки: <b>'+dur+'</b></div>':'')
+    +'</div></div>';
+}
+function renderAcceptSummary(){
+  const m = state.data.meta;
+  const s = m.acceptStart, e = m.acceptEnd, dur = acceptDuration(m);
+  if(!s && !e) return '';
+  return '<div class="accept-summary">'
+    +'<div class="as-row"><span>Начало приёмки</span><b>'+(s?formatDate(s):'—')+'</b></div>'
+    +'<div class="as-row"><span>Конец приёмки</span><b>'+(e?formatDate(e):'—')+'</b></div>'
+    +(dur?'<div class="as-row"><span>Длительность</span><b>'+dur+'</b></div>':'')
+    +'</div>';
 }
 function renderSummaryModal(){
   if(!state.showSummary) return '';
@@ -674,6 +1225,7 @@ function renderSummaryModal(){
       +'<div><b>'+summary.criticalBad+'</b><span>критичных</span></div>'
     +'</div>'
     +'<div class="modal-cabin">Кабина <b>'+escapeHtml(state.cabin)+'</b> · '+currentTypeData().label+'</div>'
+    +renderAcceptSummary()
     +'<div class="modal-actions">'
       +'<button class="btn btn-ghost" data-action="print-act">Печать</button>'
       +'<button class="btn btn-primary-'+currentTypeData().accent+'" data-action="close-summary">Закрыть</button>'
@@ -690,10 +1242,11 @@ function renderChecklist(){
       +'<button class="iconbtn" data-action="back-home">←</button>'
       +'<div class="topbar-info"><div class="topbar-cabin">Кабина <b>'+escapeHtml(state.cabin)+'</b></div>'
       +'<div class="topbar-type">'+td.label+'</div></div>'
+      +'<button class="mode-btn topbar-mode" data-action="'+(state.mode==='inspector'?'exit-inspector':'open-inspector-login')+'">'+(state.mode==='inspector'?'ОТК ✓':'🔒 Просмотр')+'</button>'
       +'<div class="save-indicator" id="saveIndicator">'+saveIndicatorText()+'</div>'
     +'</div>'
     +'<div class="stage-chips">'+stages.map((s,i)=>'<button class="chip '+(i===state.stageIndex?'active':'')+' chip-'+stageStatus(s)+'" data-action="goto-stage" data-index="'+i+'">'+(i+1)+'</button>').join('')+'</div>'
-    +'<div class="stage-panel">'+renderStageContent(stage)+'</div>'
+    +renderAcceptBar()+'<div class="stage-panel">'+renderStageContent(stage)+'</div>'
     +'<div class="bottom-bar">'
       +'<div class="progress-wrap"><div class="progress-track"><div class="progress-fill" style="width:'+pct+'%"></div></div>'
       +'<div class="progress-label">'+summary.checked+'/'+summary.total+' · '+pct+'%</div></div>'
@@ -715,15 +1268,63 @@ function renderCabinList(){
     const pct = e.total ? Math.round(e.checked/e.total*100) : 0;
     const cls = e.bad>0 ? 'issue' : (e.checked===e.total && e.total>0 ? 'done' : (e.checked>0?'partial':'empty'));
     const confirming = state.confirmDeleteSlug===e.slug;
+    const totalStages = e.totalStages || (DATA[type] ? DATA[type].stages.length : 0);
+    const lastTouched = e.lastTouched || 0;
+    const stageLabel = lastTouched>0
+      ? 'Этап '+lastTouched+' из '+totalStages+(e.lastTouchedTitle?' · '+escapeHtml(e.lastTouchedTitle):'')
+      : 'Не начато';
+    const signedLabel = (e.signedCount>0) ? (' · подписано '+e.signedCount+'/'+totalStages) : '';
     return '<div class="cabin-card">'
       +'<button class="cabin-card-main" data-action="open-cabin-card" data-type="'+type+'" data-cabin="'+escapeHtml(e.cabin)+'">'
         +'<div class="cabin-card-top"><span class="cabin-id">'+escapeHtml(e.cabin)+'</span><span class="cabin-dot dot-'+cls+'"></span></div>'
         +'<div class="cabin-progress-track"><div class="cabin-progress-fill fill-'+cls+'" style="width:'+pct+'%"></div></div>'
+        +'<div class="cabin-stage-meta">'+stageLabel+signedLabel+'</div>'
         +'<div class="cabin-meta">'+e.checked+'/'+e.total+' · '+(e.bad>0?e.bad+' замеч.':'без замечаний')+' · '+formatDate(e.updatedAt)+'</div>'
       +'</button>'
       +'<button class="cabin-del '+(confirming?'confirming':'')+'" data-action="delete-cabin" data-type="'+type+'" data-slug="'+e.slug+'">'+(confirming?'Удалить?':'✕')+'</button>'
     +'</div>';
   }).join('');
+}
+function renderAnalytics(){
+  const type = state.analyticsType;
+  const td = DATA[type];
+  if(state.analyticsLoading || !state.analyticsData){
+    return '<div class="checklist accent-'+td.accent+'">'
+      +'<div class="topbar"><button class="iconbtn" data-action="back-home">←</button>'
+        +'<div class="topbar-info"><div class="topbar-type">Аналитика · '+td.label+'</div></div>'
+      +'</div>'
+      +'<div class="stage-panel"><div class="empty-hint">Считаю статистику по всем кабинам…</div></div>'
+      +'</div>';
+  }
+  const a = state.analyticsData;
+  const topHtml = a.topDefects.length ? a.topDefects.map((d,i)=>
+    '<div class="defect-row"><span class="defect-rank">'+(i+1)+'</span>'
+      +'<div class="defect-info"><div class="defect-text">'+escapeHtml(d.text)+'</div>'
+      +'<div class="defect-meta">Шифр '+d.code+' · '+d.cabinsCount+' кабин(ы)</div></div>'
+      +'<div class="defect-count">'+d.count+'</div></div>'
+  ).join('') : '<div class="empty-hint">Замечаний с проставленными шифрами пока нет.</div>';
+  const catHtml = a.byCategory.map(c=>{
+    const pct = a.totalBad ? Math.round(c.count/a.totalBad*100) : 0;
+    return '<div class="cat-row"><div class="cat-row-top"><span>'+escapeHtml(c.title)+'</span><b>'+c.count+'</b></div>'
+      +'<div class="cat-bar-track"><div class="cat-bar-fill" style="width:'+pct+'%"></div></div></div>';
+  }).join('');
+  return '<div class="checklist accent-'+td.accent+'">'
+    +'<div class="topbar"><button class="iconbtn" data-action="back-home">←</button>'
+      +'<div class="topbar-info"><div class="topbar-type">Аналитика · '+td.label+'</div></div>'
+      +'<button class="mode-btn" data-action="print-act">🖨 PDF</button>'
+    +'</div>'
+    +'<div class="stage-panel">'
+    +'<div class="print-only-title">Аналитика · '+td.label+' · '+formatDate(new Date().toISOString())+'</div>'
+    +'<div class="analytics-summary">'
+      +'<div><b>'+a.cabinsCount+'</b><span>кабин</span></div>'
+      +'<div><b>'+a.totalBad+'</b><span>замечаний</span></div>'
+      +'<div><b>'+a.totalCritical+'</b><span>критичных</span></div>'
+    +'</div>'
+    +'<div class="block-label">Топ повторяющихся дефектов</div>'
+    +'<div class="defect-list">'+topHtml+'</div>'
+    +'<div class="block-label">По категориям</div>'
+    +'<div class="cat-list">'+catHtml+'</div>'
+    +'</div></div>';
 }
 function renderHome(){
   const t = state.homeTab;
@@ -733,6 +1334,7 @@ function renderHome(){
       +'<h1 class="hero-title">Приёмка сантехнической кабины</h1>'
       +'<p class="hero-sub">Электронные чек-листы для проверки сборки конструктива и чистовой отделки кабины — отдельно по каждому этапу производства.</p>'
     +'</header>'
+    +renderModeBar()
     +'<div class="type-tabs">'
       +'<button class="type-tab tab-blue '+(t==='assembly'?'active':'')+'" data-action="home-tab" data-type="assembly">Сборка кабины</button>'
       +'<button class="type-tab tab-rust '+(t==='finishing'?'active':'')+'" data-action="home-tab" data-type="finishing">Чистовая отделка</button>'
@@ -741,11 +1343,19 @@ function renderHome(){
       +'<input type="text" class="cabin-input" placeholder="Номер кабины, напр. К-104" value="'+escapeHtml(state.cabinInputValue)+'" data-action="cabin-input">'
       +'<button class="btn btn-primary-'+td.accent+'" data-action="open-cabin" data-type="'+t+'">Открыть</button>'
     +'</div>'
+    +'<div class="analytics-link"><button class="btn btn-ghost" data-action="open-analytics" data-type="'+t+'">📊 Аналитика по разделу «'+td.short+'»</button></div>'
+    +'<div class="analytics-link"><button class="btn btn-ghost" data-action="export-reestr">📥 Экспорт реестра несоответствий (Excel)</button></div>'
     +'<div class="cabin-list">'+renderCabinList()+'</div>'
     +'</div>';
 }
 function render(){
-  document.getElementById('app').innerHTML = state.screen==='home' ? renderHome() : renderChecklist();
+  const app = document.getElementById('app');
+  let body;
+  if(state.screen==='home') body = renderHome();
+  else if(state.screen==='analytics') body = renderAnalytics();
+  else body = renderChecklist();
+  app.innerHTML = body + renderModeModal() + renderToast();
+  app.classList.toggle('mode-viewer', state.mode!=='inspector');
 }
 
 /* ---------- events ---------- */
@@ -754,6 +1364,8 @@ document.addEventListener('click', function(e){
   if(!el) return;
   const action = el.dataset.action;
   if(action==='stop') return;
+  const MUTATING={status:1,'toggle-code':1,'toggle-note':1,'unsign-stage':1,'accept-now':1,'accept-clear':1,'delete-cabin':1};
+  if(MUTATING[action] && !canEdit()){ toast('Только просмотр — войдите как инспектор ОТК'); return; }
   switch(action){
     case 'home-tab': state.homeTab = el.dataset.type; render(); refreshIndex(state.homeTab); break;
     case 'open-cabin': openCabin(el.dataset.type, state.cabinInputValue); break;
@@ -764,20 +1376,34 @@ document.addEventListener('click', function(e){
     case 'prev-stage': if(state.stageIndex>0){ state.stageIndex--; render(); } break;
     case 'next-stage': if(state.stageIndex<currentStages().length-1){ state.stageIndex++; render(); } break;
     case 'status': setStatus(el.dataset.item, el.dataset.val); break;
+    case 'toggle-code': toggleCode(el.dataset.item, el.dataset.code); break;
     case 'toggle-note': toggleNote(el.dataset.item); break;
     case 'sign-stage': signStage(el.dataset.stage); break;
     case 'unsign-stage': unsignStage(el.dataset.stage); break;
     case 'open-summary': state.showSummary=true; render(); break;
     case 'close-summary': state.showSummary=false; render(); break;
     case 'print-act': window.print(); break;
+    case 'accept-now': setAcceptTime(el.dataset.which, null, true); break;
+    case 'accept-clear': setAcceptTime(el.dataset.which, '', true); break;
+    case 'open-inspector-login': openInspectorLogin(null); break;
+    case 'exit-inspector': exitInspector(); break;
+    case 'confirm-inspector': confirmInspector(); break;
+    case 'close-mode': state.showModeModal=false; state.pendingSignStage=null; render(); break;
+    case 'open-analytics': openAnalytics(el.dataset.type); break;
+    case 'export-reestr': exportReestr(); break;
   }
 });
 document.addEventListener('input', function(e){
   const el = e.target;
   const action = el.dataset ? el.dataset.action : null;
   if(action==='cabin-input'){ state.cabinInputValue = el.value; }
-  else if(action==='note'){ const id=el.dataset.item; ensureItem(id); state.data.items[id].note = el.value; scheduleSave(); }
-  else if(action==='inspector-name-input'){ state.data.meta.inspectorName = el.value; scheduleSave(); }
+  else if(action==='inspector-id-input'){ state.inspectorIdDraft = el.value; }
+  else if(action==='note'){ if(!canEdit()) return; const id=el.dataset.item; ensureItem(id); state.data.items[id].note = el.value; scheduleSave(); }
+  else if(action==='accept-input'){ if(!canEdit()) return; setAcceptTime(el.dataset.which, el.value, false); }
+});
+document.addEventListener('change', function(e){
+  const el = e.target;
+  if(el.dataset && el.dataset.action==='accept-input'){ render(); }
 });
 document.addEventListener('keydown', function(e){
   if(e.key==='Enter' && e.target.dataset && e.target.dataset.action==='cabin-input'){
@@ -785,8 +1411,50 @@ document.addEventListener('keydown', function(e){
   }
 });
 
-render();
-refreshIndex('assembly');
+/* ============ ИМПОРТ КАБИН ИЗ РЕЕСТРА ОТК (v2: шифр -> свой пункт) ============ */
+const REGISTRY_SEED = [{"cabin":"pod.s2.30.p.05a1","codes":["31","36","37","43","50","55","56","60","63","64"]},{"cabin":"pod.s2.30.p.05a2","codes":["31","33","34","36","43","55","56","60"]},{"cabin":"pod.s2.30.p.05a3","codes":["31","36","43","46","55","56","60","64"]},{"cabin":"pod.s2.30.p.05a4","codes":["31","36","43","55","56","60","64"]},{"cabin":"pod.s2.30.p.05a5","codes":["24","27","213","31","33","36","55","56","60","61","64"]},{"cabin":"pod.s2.30.p.05a6","codes":["24","27","210","213","31","33","34","36","37","43","46","50","55","56","60","61","63","64"]},{"cabin":"pod.s2.30.p.05a7","codes":["64"]},{"cabin":"pod.s2.30.p.05b1","codes":["112","26","29","31","33","34","36","45","50","51","52","53","54","60","61","63","64"]},{"cabin":"pod.s2.30.p.05b2","codes":["26","28","24","213","30","31","33","34","36","45","50","51","52","53","54","60","61","63","64"]},{"cabin":"pod.s2.30.p.05b3","codes":["26","28","24","213","30","31","33","34","36","45","50","51","52","53","54","60","61","62","63","64"]},{"cabin":"pod.s2.30.p.05b4","codes":["20","22","26","27","28","210","24","213","30","31","33","34","37","45","50","51","52","53","54","60","61","62","63","64"]},{"cabin":"pod.s2.30.p.05b5","codes":["26","28","24","213","30","31","33","34","37","45","50","51","52","53","54","60","61","63","64"]},{"cabin":"pod.s2.30.p.05b6","codes":["26","28","24","213","30","31","33","34","36","45","50","51","52","53","54","60","61","63","64"]},{"cabin":"pod.s2.30.p.05b7","codes":["26","28","24","213","30","31","33","34","36","45","50","51","52","53","54","60","61","62","63","64"]},{"cabin":"pod.s2.30.p.02a1","codes":[]},{"cabin":"pod.s2.30.p.02a2","codes":[]},{"cabin":"pod.s2.30.p.02a3","codes":[]},{"cabin":"pod.s2.30.p.02a4","codes":[]},{"cabin":"pod.s2.30.p.02a5","codes":[]},{"cabin":"pod.s2.30.p.02a6","codes":[]},{"cabin":"pod.s3.30.p.04a1","codes":[]},{"cabin":"pod.s3.30.p.04a2","codes":[]},{"cabin":"pod.d1.30.p.02b1","codes":[]},{"cabin":"pod.d1.30.p.02b2","codes":[]},{"cabin":"pod.d1.30.p.02b3","codes":[]},{"cabin":"pod.d1.30.p.02b4","codes":[]},{"cabin":"pod.d1.30.p.02b5","codes":[]},{"cabin":"pod.d1.30.p.02b6","codes":[]},{"cabin":"pod.d1.30.p.02b7","codes":[]}];
+const SEED_FLAG = 'registry_seed_v2';
+async function seedFromRegistry(){
+  let done=null; try{ done = await storageGet(SEED_FLAG); }catch(e){}
+  if(done) return;                                   // импорт выполняется один раз
+  const base = Date.now();
+  const idx = {assembly:[], finishing:[]};
+  for(let i=0;i<REGISTRY_SEED.length;i++){
+    const entry = REGISTRY_SEED[i];
+    const cabin = entry.cabin, slug = slugify(cabin);
+    const ts = new Date(base - i*1000).toISOString();
+    const recs = {
+      assembly:{meta:{cabin,type:'assembly', createdAt:ts,updatedAt:ts,inspectorName:''}, items:{}, stageSign:{}},
+      finishing:{meta:{cabin,type:'finishing',createdAt:ts,updatedAt:ts,inspectorName:''}, items:{}, stageSign:{}}
+    };
+    (entry.codes||[]).forEach(code=>{
+      const item = CODE_TO_ITEM[code];
+      if(!item) return;                              // нет привязки — пропускаем
+      const type = item.split('_')[0];
+      const rec = recs[type];
+      if(!rec.items[item]) rec.items[item] = {status:'bad', note:'', codes:[]};
+      rec.items[item].status = 'bad';
+      if(rec.items[item].codes.indexOf(code)<0) rec.items[item].codes.push(code);
+    });
+    for(const type of ['assembly','finishing']){
+      const data = recs[type];
+      await storageSet('cl_'+type+'_'+slug, JSON.stringify(data));
+      const s = computeSummary(type,data), sp = computeStageProgress(type,data);
+      idx[type].push(Object.assign({slug,cabin,updatedAt:ts}, s, sp));
+    }
+  }
+  try{ await storageSet('idx_assembly',  JSON.stringify(idx.assembly));  }catch(e){}
+  try{ await storageSet('idx_finishing', JSON.stringify(idx.finishing)); }catch(e){}
+  try{ await storageSet(SEED_FLAG, new Date().toISOString()); }catch(e){}
+  state.cabinIndexCache.assembly  = idx.assembly;
+  state.cabinIndexCache.finishing = idx.finishing;
+}
+(async function(){
+  await loadModeState();
+  await seedFromRegistry();
+  render();
+  await refreshIndex(state.homeTab);
+})();
 </script>
 </body>
 </html>
